@@ -1104,9 +1104,16 @@ fn prepare_withdraw_accounts(
         if lamports <= min_balance {
             continue;
         }
-        let available_for_withdrawal = stake_pool
-            .calc_lamports_withdraw_amount(lamports - *MIN_STAKE_BALANCE)
-            .unwrap();
+
+        let available_for_withdrawal: u64 = if lamports > *MIN_STAKE_BALANCE
+        {
+            stake_pool
+                .calc_lamports_withdraw_amount(lamports - *MIN_STAKE_BALANCE)
+                .unwrap()
+        } else {
+            0
+        };
+
         let pool_amount = u64::min(available_for_withdrawal, remaining_amount);
 
         // Those accounts will be withdrawn completely with `claim` instruction
@@ -1187,9 +1194,16 @@ fn command_withdraw(
             stake_pool_address,
         );
         let stake_account = config.rpc_client.get_account(&stake_account_address)?;
-        let available_for_withdrawal = stake_pool
-            .calc_lamports_withdraw_amount(stake_account.lamports - *MIN_STAKE_BALANCE)
-            .unwrap();
+
+        let available_for_withdrawal: u64 = if stake_account.lamports >* MIN_STAKE_BALANCE
+        {
+            stake_pool
+                .calc_lamports_withdraw_amount(stake_account.lamports - *MIN_STAKE_BALANCE)
+                .unwrap()
+        } else {
+            0
+        };
+
         if available_for_withdrawal < pool_amount {
             return Err(format!(
                 "Not enough lamports available for withdrawal from {}, {} asked, {} available",
@@ -1991,8 +2005,8 @@ fn main() {
                     .help("Withdraw from the stake pool's reserve. Only possible if all validator stakes are at the minimum possible amount."),
             )
             .group(ArgGroup::with_name("withdraw_from")
-                .arg("use_reserve")
-                .arg("vote_account")
+                .arg("stake_receiver")
+//                .arg("vote_account")
             )
         )
         .subcommand(SubCommand::with_name("set-manager")
